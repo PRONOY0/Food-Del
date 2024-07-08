@@ -1,6 +1,8 @@
 const ORDER = require("../models/order.model");
 const USER = require("../models/user.model");
 const Stripe = require("stripe");
+const { mailSender } = require("../utils/mailSender");
+const { orderConfirmation } = require("../mailTemplates/orderConfirmation");
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -50,6 +52,12 @@ exports.placeOrder = async (req, res) => {
       success: true,
       session_url: session.url,
     });
+
+    const user = await USER.findById(req.body.userId);
+    const emailContet = orderConfirmation(user.name,req.body.items,req.body.amount);
+
+    mailSender(user.email,"Order Confirmation || TOMATO",emailContet);
+
   } catch (error) {
     console.log(error);
     res.json({

@@ -10,28 +10,8 @@ const { signUpMail } = require("../mailTemplates/signUpMail");
 const { loginmail } = require("../mailTemplates/loginMail");
 const fs = require("fs");
 const OTP = require("../models/otp.model");
-const { log } = require("console");
+const {mailSender} = require('../utils/mailSender');
 require("dotenv").config();
-
-exports.mailSender = async (email, subject, body) => {
-  const transporter = nodemailer.createTransport({
-    service: "Gmail",
-    host: process.env.MAIL_HOST,
-    auth: {
-      user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASS,
-    },
-  });
-
-  const mailOptions = {
-    to: email,
-    from: process.env.MAIL_USER,
-    subject: `${subject}`,
-    html: `${body}`,
-  };
-
-  await transporter.sendMail(mailOptions);
-};
 
 const createToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET);
@@ -62,19 +42,19 @@ exports.login = async (req, res) => {
       });
     }
 
-    const imageUrl = user.imageUrl;
-
     const token = createToken(user._id);
-    await this.mailSender(
+
+    res.json({
+      success: true,
+      token,
+      imageUrl: user.imageUrl,
+    });
+
+    mailSender(
       email,
       "Login Successful || TOMATO",
       loginmail(user.name)
     );
-    res.json({
-      success: true,
-      token,
-      imageUrl,
-    });
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -85,7 +65,6 @@ exports.login = async (req, res) => {
 };
 
 exports.signUp = async (req, res) => {
-  const salt = await bcrypt.genSalt(10);
   try {
     //* import
     let image_filename = req.file ? req.file.filename : null;
@@ -106,13 +85,14 @@ exports.signUp = async (req, res) => {
     }
 
     //* validation
-    const exists = await User.findOne({ email });
     if (!validator.isEmail(email)) {
       return res.json({
         success: false,
         message: "Please enter a valid email",
       });
     }
+
+    const exists = await User.findOne({ email });
 
     if (exists) {
       return res.json({
@@ -136,6 +116,8 @@ exports.signUp = async (req, res) => {
       });
     }
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     //* name split and save as elements in array
     let nameArray = [];
     let userName = name;
@@ -148,76 +130,40 @@ exports.signUp = async (req, res) => {
     }
 
     //* if user didn't provide any profile pic then we will use this default profile pic
-    if (!image_filename) {
-      try {
-        let profileUrl = `https://api.dicebear.com/5.x/initials/svg?seed=${
-          nameArray[0]
-        }%20${nameArray[nameArray.length - 1]}`;
 
-        const hashedPassword = await bcrypt.hash(password, salt);
+    let profileUrl =
+      image_filename ||
+      `https://api.dicebear.com/5.x/initials/svg?seed=${nameArray[0]}%20${
+        nameArray[nameArray.length - 1]
+      }`;
 
-        const newUser = new User({
-          name: name,
-          email: email,
-          password: hashedPassword,
-          imageUrl: profileUrl,
-          phoneNumber,
-        });
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword,
+      imageUrl: profileUrl,
+      phoneNumber,
+    });
 
-        const Saveduser = await newUser.save();
-        const token = createToken(Saveduser._id);
-        Saveduser.password = undefined;
+    const savedUser = await newUser.save();
+    const token = createToken(savedUser._id);
 
-        res.status(200).json({
-          success: true,
-          message: "Created user successfully",
-          Saveduser,
-          token,
-          profileUrl,
-        });
-      } catch (error) {
-        console.error("Error while saving user without image: ", error);
-        res.status(500).json({
-          success: false,
-          message: `Internal Server error`,
-        });
-      }
-    } else {
-      try {
-        const hashedPassword = await bcrypt.hash(password, salt);
+    res.status(201).json({
+      success: true,
+      message: "Created user successfully",
+      token,
+      user: {
+        id: savedUser._id,
+        name: savedUser.name,
+        email: savedUser.email,
+        imageUrl: savedUser.imageUrl,
+      },
+    });
 
-        const newUser = new User({
-          name: name,
-          email: email,
-          password: hashedPassword,
-          imageUrl: image_filename,
-          phoneNumber: phoneNumber,
-        });
+    mailSender(email, "Welcome to TOMATO!", signUpMail(name));
 
-        const Saveduser = await newUser.save();
-
-        const token = createToken(Saveduser._id);
-
-        Saveduser.password = undefined;
-
-        res.status(200).json({
-          success: true,
-          message: "Created user successfully",
-          token,
-          Saveduser,
-        });
-      } catch (error) {
-        console.error("Error while saving user with image: ", error);
-        res.status(500).json({
-          success: false,
-          message: "Internal Server error",
-        });
-      }
-    }
-    await this.mailSender(email, "Welcome to TOMATO!", signUpMail(name));
   } catch (error) {
     console.log(error);
-    console.error("Unexpected error during signup: ", error);
     res.status(500).json({
       success: false,
       message: `Internal Server error due to ${error}`,
@@ -276,7 +222,7 @@ exports.updateProfile = async (req, res) => {
       });
     }
 
-    await this.mailSender(
+    mailSender(
       updatedUser.email,
       "Profile Updated || TOMATO",
       profileUpdated(updatedUser.name)
@@ -320,7 +266,7 @@ exports.otpVerification = async (req, res) => {
     if (otp === convertedOTP) {
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {});
 
-      await this.mailSender(
+      mailSender(
         email,
         "Reset Password || TOMATO",
         resetPasswordmail(user.name, reset_url)
@@ -370,7 +316,7 @@ exports.forgotPassword = async (req, res) => {
     user.otp = savedOtp._id;
     await user.save();
 
-    await this.mailSender(
+    mailSender(
       user.email,
       "Account Verification OTP || TOMATO",
       otpSend(user.name, generatedOTP)
@@ -393,11 +339,11 @@ exports.forgotPassword = async (req, res) => {
 exports.resetPassword = async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     const { password } = req.body;
 
     console.log(userId);
-    
+
     if (!password || password.length < 8) {
       return res.status(404).json({
         success: false,
@@ -405,33 +351,32 @@ exports.resetPassword = async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password,10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.findById(userId);
 
-    if(!user){
+    if (!user) {
       return res.status(404).json({
-        "success": false,
-        "message": "User not found"
+        success: false,
+        message: "User not found",
       });
     }
 
     user.password = hashedPassword;
     await user.save();
 
-    const token = jwt.sign({id:userId},process.env.JWT_SECRET);
+    const token = jwt.sign({ id: userId }, process.env.JWT_SECRET);
 
     res.status(200).json({
-      "success": true,
-      "message": "Changed Password Successfully",
+      success: true,
+      message: "Changed Password Successfully",
       token,
     });
-
   } catch (error) {
     console.log(error);
     res.status(500).json({
-      "success": false,
-      "message": "Failed to change password"
+      success: false,
+      message: "Failed to change password",
     });
   }
 };
