@@ -93,8 +93,8 @@ const orderConfirmation = (username, items, totalAmount) => {
             </tbody>
             <tfoot>
               <tr>
-                <td colspan="2" style="padding: 8px; border: 1px solid #ddd; text-align: right;"><strong>Total</strong></td>
-                <td style="padding: 8px; border: 1px solid #ddd;"><strong>${totalAmount}</strong></td>
+                <td colspan="2" style="padding: 8px; border: 1px solid #ddd; text-align:start;"><strong>Total</strong></td>
+                <td style="padding: 8px; border: 1px solid #ddd;"><strong>$${totalAmount}</strong></td>
               </tr>
             </tfoot>
           </table>

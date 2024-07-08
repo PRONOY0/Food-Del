@@ -59,7 +59,7 @@ const LoginPopup = ({ setShowLogin }) => {
         if (response.data.success) {
           setToken(response.data.token);
           localStorage.setItem("token", response.data.token);
-          localStorage.setItem("pfp", response.data.imageUrl);
+          localStorage.setItem("pfp", response.data.user.imageUrl);
           setShowLogin(false);
           setLoader(false);
         } else {
@@ -84,7 +84,7 @@ const LoginPopup = ({ setShowLogin }) => {
         if (response.data.success) {
           setToken(response.data.token);
           localStorage.setItem("token", response.data.token);
-          localStorage.setItem("pfp", response.data.Saveduser.imageUrl);
+          localStorage.setItem("pfp", response.data.savedUser.imageUrl);
           setShowLogin(false);
           setLoader(false);
         } else {

@@ -2,7 +2,6 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const validator = require("validator");
 const User = require("../models/user.model");
-const nodemailer = require("nodemailer");
 const { resetPasswordmail } = require("../mailTemplates/resetPassword");
 const { otpSend } = require("../mailTemplates/otpSend");
 const { profileUpdated } = require("../mailTemplates/profileUpdated");
@@ -47,7 +46,7 @@ exports.login = async (req, res) => {
     res.json({
       success: true,
       token,
-      imageUrl: user.imageUrl,
+      user,
     });
 
     mailSender(
@@ -152,12 +151,7 @@ exports.signUp = async (req, res) => {
       success: true,
       message: "Created user successfully",
       token,
-      user: {
-        id: savedUser._id,
-        name: savedUser.name,
-        email: savedUser.email,
-        imageUrl: savedUser.imageUrl,
-      },
+      savedUser,
     });
 
     mailSender(email, "Welcome to TOMATO!", signUpMail(name));
