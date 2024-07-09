@@ -5,7 +5,7 @@ import FoodItem from "../FoodItem/FoodItem";
 import Spinner from "../Spinner/Spinner";
 
 const FoodDisplay = ({ category }) => {
-  const { food_list, loader, setLoader } = useContext(StoreContext);
+  const { food_list, loader } = useContext(StoreContext);
 
   return (
     <div className="food-display" id="food-display">
