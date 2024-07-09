@@ -80,10 +80,10 @@ const StoreContextProvider = (props) => {
         setToken(localStorage.getItem("token"));
         await loadCartData(localStorage.getItem("token"));
       }
+    setLoader(false);
     }
 
     loadData();
-    setLoader(false);
   }, []);
 
   useEffect(() => {
