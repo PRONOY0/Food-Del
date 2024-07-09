@@ -14,6 +14,8 @@ const StoreContextProvider = (props) => {
 
   const [showOTPsection, setShowOTPsection] = useState(false);
 
+  const [loader,setLoader] = useState(false);
+
   const addToCart = async (itemId) => {
     if (!cartItems[itemId]) {
       setCartItems((prev) => ({ ...prev, [itemId]: 1 }));
@@ -72,6 +74,7 @@ const StoreContextProvider = (props) => {
 
   useEffect(() => {
     async function loadData() {
+      setLoader(true);
       await fetchFoodList();
       if (localStorage.getItem("token")) {
         setToken(localStorage.getItem("token"));
@@ -80,6 +83,7 @@ const StoreContextProvider = (props) => {
     }
 
     loadData();
+    setLoader(false);
   }, []);
 
   useEffect(() => {
