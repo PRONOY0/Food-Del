@@ -2,14 +2,21 @@ import React, { useContext } from "react";
 import "./foodDisplay.css";
 import { StoreContext } from "../../context/StoreContext";
 import FoodItem from "../FoodItem/FoodItem";
+import Spinner from "../Spinner/Spinner";
 
 const FoodDisplay = ({ category }) => {
-  const { food_list } = useContext(StoreContext);
+  const { food_list, loader, setLoader } = useContext(StoreContext);
 
   return (
     <div className="food-display" id="food-display">
       <h2>Top dishes near you</h2>
-      <div className="food-display-list">
+      {
+        loader ? (<Spinner/>) 
+        
+        : 
+        
+        (
+          <div className="food-display-list">
         {food_list
           .filter(item => category === "All" || category === item.category)
           .map((item) => (
@@ -23,6 +30,8 @@ const FoodDisplay = ({ category }) => {
               />
         ))}
       </div>
+        )
+      }
     </div>
   );
 };
