@@ -14,7 +14,7 @@ const StoreContextProvider = (props) => {
 
   const [showOTPsection, setShowOTPsection] = useState(false);
 
-  const [loader,setLoader] = useState(false);
+  const [loader,setLoader] = useState(true);
 
   const addToCart = async (itemId) => {
     if (!cartItems[itemId]) {
