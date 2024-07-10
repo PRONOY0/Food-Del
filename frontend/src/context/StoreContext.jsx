@@ -104,6 +104,7 @@ const StoreContextProvider = (props) => {
     setToken,
     showOTPsection,
     setShowOTPsection,
+    loader,
   };
 
   return (
