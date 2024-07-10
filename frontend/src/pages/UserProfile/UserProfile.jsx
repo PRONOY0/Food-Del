@@ -3,18 +3,22 @@ import "./UserProfile.css";
 import {useNavigate} from 'react-router-dom'
 import axios from "axios";
 import { StoreContext } from "../../context/StoreContext";
+import Spinner from "../../components/Spinner/Spinner";
 
 const UserProfile = () => {
   const navigate = useNavigate();
   const { url, token } = useContext(StoreContext);
   const [userData, setUserData] = useState([]);
+  const [loader,setLoader] = useState(false);
 
   const fetchData = async () => {
+    setLoader(true);
     const response = await axios.post(
       url + "/api/user/profile",
       {},
       { headers: { token } }
     );
+    setLoader(false);
     setUserData(response.data.data);
     localStorage.setItem("pfp", response.data.data.imageUrl);
   };
@@ -62,7 +66,6 @@ const UserProfile = () => {
           </div>
 
           <div>
-            {/* <img src={url + `/images/${userData.imageUrl}`} alt="" /> */}
             <img src={urlPFP ? `${extract_pfp}` : `${url}/images/${extract_pfp}`} alt="" className="user-profile-pic"/>
           </div>
         </div>
